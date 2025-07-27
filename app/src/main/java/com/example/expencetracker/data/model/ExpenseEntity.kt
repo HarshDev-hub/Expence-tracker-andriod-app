@@ -2,6 +2,7 @@ package com.example.expencetracker.data.model
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.util.Enumeration
 
 @Entity(tableName = "expense_table")
 data class ExpenseEntity(

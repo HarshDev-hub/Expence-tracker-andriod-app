@@ -3,15 +3,16 @@ package com.example.expencetracker.viewmodel
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import com.example.expencetracker.R
 import com.example.expencetracker.Utils
 import com.example.expencetracker.data.ExpenseDatabase
 import com.example.expencetracker.data.dao.ExpenseDao
 import com.example.expencetracker.data.model.ExpenseEntity
+import kotlinx.coroutines.launch
 
-class HomeVM(dao: ExpenseDao):ViewModel() {
+class HomeVM(var dao: ExpenseDao):ViewModel() {
     val expenses = dao.getAllExpenses()
-
     fun getBalance(list: List<ExpenseEntity>): String{
         var balance = 0.0
         for (expenses in list) {
@@ -44,7 +45,15 @@ class HomeVM(dao: ExpenseDao):ViewModel() {
         }
         return "$ ${Utils.formatToDecimalValue(totalIncome)}"
     }
+
+      fun deleteExpense(expenseEntity: ExpenseEntity) {
+        viewModelScope.launch {
+            dao.deleteExpense(expenseEntity)
+        }
+    }
+
 }
+
 
 
 class HomeVMFactory(private val context: Context) : ViewModelProvider.Factory {

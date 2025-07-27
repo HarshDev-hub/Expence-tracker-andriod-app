@@ -13,6 +13,8 @@ import com.github.mikephil.charting.data.Entry
 class StashVM(val dao: ExpenseDao):ViewModel() {
     val entries = dao.getAllExpenseByDate()
     val topEntries = dao.getTopExpense()
+    val topIncome = dao.getTopIncome()
+
     fun getEntriesForChart(entries: List<ExpenseSummary>):List<Entry>{
         val list = mutableListOf<Entry>()
         for(entry in entries){
