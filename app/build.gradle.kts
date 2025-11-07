@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     id("com.google.devtools.ksp")
+    id ("dagger.hilt.android.plugin")
 
 }
 
@@ -74,4 +75,8 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:$nav_version")
     // for chart
     implementation( "com.github.PhilJay:MPAndroidChart:v3.1.0")
+
+    implementation("com.google.dagger:hilt-android:2.56.2")
+    ksp("com.google.dagger:hilt-android-compiler:2.56.2")
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 }

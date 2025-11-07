@@ -1,5 +1,6 @@
 package com.example.expencetracker.Screen
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,14 +21,22 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,21 +49,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
-
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.expencetracker.R
 import com.example.expencetracker.Utils
 import com.example.expencetracker.data.model.ExpenseEntity
 import com.example.expencetracker.viewmodel.HomeVM
-import com.example.expencetracker.viewmodel.HomeVMFactory
 import com.example.expencetracker.ui.theme.Zinc
 import com.example.expencetracker.viewmodel.StashVM
 import com.example.expencetracker.widget.ExpenceTextView
+import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(navController: NavController){
-    val viewModel: HomeVM = HomeVMFactory(LocalContext.current).create(HomeVM::class.java)
+    val viewModel: HomeVM = hiltViewModel()
     val coroutineScope = rememberCoroutineScope()
     Surface(modifier = Modifier.fillMaxSize()) {
         ConstraintLayout(modifier = Modifier.fillMaxSize()) {
@@ -70,7 +79,7 @@ fun HomeScreen(navController: NavController){
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 64.dp, start = 16.dp, end = 16.dp)
-                    .constrainAs(nameRow){
+                    .constrainAs(nameRow) {
                         top.linkTo(parent.top)
                         start.linkTo(parent.start)
                         end.linkTo(parent.end)
@@ -92,7 +101,8 @@ fun HomeScreen(navController: NavController){
                 Image(
                     painter = painterResource(R.drawable.ic_notification),
                     contentDescription = null,
-                    modifier = Modifier.align(Alignment.CenterEnd)
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
                         .size(40.dp)
                 )
             }
@@ -116,7 +126,7 @@ fun HomeScreen(navController: NavController){
             TransactionList(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .constrainAs(list){
+                    .constrainAs(list) {
                         top.linkTo(card.bottom)
                         start.linkTo(parent.start)
                         end.linkTo(parent.end)
@@ -124,14 +134,18 @@ fun HomeScreen(navController: NavController){
                         height = Dimension.fillToConstraints
                     },
                 list = state.value,
-                onDeleteClick = { item -> viewModel.deleteExpense(item) }
+                onDeleteClick = { item ->
+                    coroutineScope.launch {
+                        viewModel.deleteExpense(item)
+                    }
+                }
             )
 
             Image(
                 painter = painterResource(id = android.R.drawable.ic_menu_add),
                 contentDescription = null,
                 modifier = Modifier
-                    .constrainAs(add){
+                    .constrainAs(add) {
                         bottom.linkTo(parent.bottom)
                         end.linkTo(parent.end)
                     }
@@ -152,6 +166,10 @@ fun TransactionList(
     title: String = "Recent Transactions",
     onDeleteClick: (ExpenseEntity) -> Unit = {}
 ) {
+    val context = LocalContext.current
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var itemToDelete by remember { mutableStateOf<ExpenseEntity?>(null) }
+
     LazyColumn(modifier = modifier.padding(horizontal = 16.dp)) {
         item {
             Box(modifier = Modifier.fillMaxWidth()) {
@@ -167,41 +185,120 @@ fun TransactionList(
         }
         items(list) { item ->
             val icon = Utils.getItemIcon(item)
-            val state = rememberSwipeToDismissBoxState(
-                confirmValueChange = {
-                    if (it == SwipeToDismissBoxValue.EndToStart) {
-                        onDeleteClick(item)
-                        true
-                    } else false
+            val dismissState = rememberSwipeToDismissBoxState(
+                confirmValueChange = { dismissValue ->
+                    when (dismissValue) {
+                        SwipeToDismissBoxValue.EndToStart -> {
+                            // User swiped left to reveal delete, show confirmation dialog
+                            itemToDelete = item
+                            showDeleteDialog = true
+                            false // Return false to prevent automatic dismissal
+                        }
+                        else -> false
+                    }
                 }
             )
 
             SwipeToDismissBox(
-                state = state,
+                state = dismissState,
+                enableDismissFromStartToEnd = false, // Only allow swipe from right to left
                 backgroundContent = {
+                    val backgroundColor = when (dismissState.dismissDirection) {
+                        SwipeToDismissBoxValue.EndToStart -> Color.Red
+                        else -> Color.Transparent
+                    }
+                    
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 24.dp), // spacing for delete icon
+                            .fillMaxSize()
+                            .background(backgroundColor)
+                            .padding(horizontal = 20.dp),
                         contentAlignment = Alignment.CenterEnd
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = null,
-                            tint = Color.White,
-                        )
+                        if (backgroundColor != Color.Transparent) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Delete",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "Delete",
+                                    color = Color.White,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
                     }
                 }
             ) {
-                TransactionItem(
-                    title = item.title,
-                    amount = item.amount.toString(),
-                    icon = icon!!,
-                    date = item.date,
-                    color = if (item.type == "Income") Color.Green else Color.Red
-                )
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = Color.White,
+                    shadowElevation = if (dismissState.dismissDirection != SwipeToDismissBoxValue.Settled) 4.dp else 0.dp
+                ) {
+                    TransactionItem(
+                        title = item.title,
+                        amount = item.amount.toString(),
+                        icon = icon!!,
+                        date = item.date,
+                        color = if (item.type == "Income") Color.Green else Color.Red
+                    )
+                }
             }
         }
+    }
+
+    // Confirmation Dialog
+    if (showDeleteDialog && itemToDelete != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showDeleteDialog = false
+                itemToDelete = null
+            },
+            title = {
+                Text("Delete Transaction")
+            },
+            text = {
+                Text("Are you sure you want to delete this transaction?")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        itemToDelete?.let { expense ->
+                            onDeleteClick(expense)
+                            Toast.makeText(
+                                context,
+                                "Transaction deleted successfully",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                        showDeleteDialog = false
+                        itemToDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                ) {
+                    Text("Delete", color = Color.White)
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = {
+                        showDeleteDialog = false
+                        itemToDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
+                ) {
+                    Text("Cancel", color = Color.White)
+                }
+            }
+        )
     }
 }
 
@@ -218,7 +315,9 @@ fun cardItem(modifier: Modifier,balance:String,income:String,expenses:String){
             .padding(16.dp)
 
     ) {
-        Box(modifier = Modifier.fillMaxWidth().weight(1f)){
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .weight(1f)){
            Column(modifier = Modifier.align(Alignment.CenterStart)) {
                ExpenceTextView(text = "Total Balance",fontSize = 17.sp,color = Color.White)
                ExpenceTextView(
@@ -231,14 +330,15 @@ fun cardItem(modifier: Modifier,balance:String,income:String,expenses:String){
             Image(
                 painter = painterResource(R.drawable.ic_dot),
                 contentDescription = null,
-                modifier = Modifier.align(Alignment.CenterEnd)
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
                     .size(21.dp))
         }
 
         Box(
             modifier = Modifier
-                .fillMaxWidth().
-                weight(1f),
+                .fillMaxWidth()
+                .weight(1f),
         ) {
 
           cardRowItem(
@@ -289,7 +389,9 @@ fun TransactionItem(
     date:String,
     color: Color
 ){
-    Box(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)){
+    Box(modifier = Modifier
+        .fillMaxWidth()
+        .padding(vertical = 8.dp)){
         Row {
             Image(painter = painterResource(icon), contentDescription = null,
                 modifier = Modifier.size(50.dp)

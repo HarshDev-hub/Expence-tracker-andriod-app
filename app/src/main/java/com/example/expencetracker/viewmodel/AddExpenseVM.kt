@@ -1,32 +1,22 @@
 package com.example.expencetracker.viewmodel
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import com.example.expencetracker.data.ExpenseDatabase
-import com.example.expencetracker.data.dao.ExpenseDao
 import com.example.expencetracker.data.model.ExpenseEntity
+import com.example.expencetracker.repository.ExpenseRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-class AddExpenseVM(val dao: ExpenseDao):ViewModel() {
+@HiltViewModel
+class AddExpenseVM @Inject constructor(
+    private val repository: ExpenseRepository
+) : ViewModel() {
 
-    suspend fun addExpense(expenseEntity: ExpenseEntity): Boolean{
-       try {
-           dao.insertExpense(expenseEntity)
-           return true
-       }catch (ex: Throwable){
-           return false
-       }
-    }
-
-}
-
-class AddExpenseVMFactory(private val context: Context) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(AddExpenseVM::class.java)) {
-            val dao = ExpenseDatabase.getDatabase(context).expenseDao()
-            @Suppress("UNCHECKED_CAST")
-            return AddExpenseVM(dao) as T
+    suspend fun addExpense(expenseEntity: ExpenseEntity): Boolean {
+        return try {
+            repository.insertExpense(expenseEntity)
+            true
+        } catch (ex: Throwable) {
+            false
         }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

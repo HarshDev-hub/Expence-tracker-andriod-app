@@ -8,6 +8,7 @@ import androidx.room.Update
 import androidx.room.Upsert
 import com.example.expencetracker.data.model.ExpenseEntity
 import com.example.expencetracker.data.model.ExpenseSummary
+import com.example.expencetracker.data.model.IncomeSummary
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -24,6 +25,9 @@ interface ExpenseDao {
 
     @Query("SELECT type, date, SUM(amount) AS total_amount FROM expense_table where type = :type GROUP BY type, date ORDER BY date")
     fun getAllExpenseByDate(type:String = "Expense"):Flow<List<ExpenseSummary>>
+
+    @Query("SELECT type, date, SUM(amount) AS total_amount FROM expense_table where type = :type GROUP BY type, date ORDER BY date")
+    fun getTopEntriesForIncome(type:String = "Income"):Flow<List<IncomeSummary>>// that is help to show chart in total income
 
     @Insert
     suspend fun insertExpense(expenseEntity: ExpenseEntity)

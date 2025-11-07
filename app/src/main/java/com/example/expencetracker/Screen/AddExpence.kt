@@ -37,20 +37,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.expencetracker.R
 import com.example.expencetracker.Utils
 import com.example.expencetracker.data.model.ExpenseEntity
 import com.example.expencetracker.viewmodel.AddExpenseVM
-import com.example.expencetracker.viewmodel.AddExpenseVMFactory
 import com.example.expencetracker.widget.ExpenceTextView
 import kotlinx.coroutines.launch
 
 @Composable
 fun AddExpence(navController: NavController){
-    val viewmodel =
-        AddExpenseVMFactory(LocalContext.current).create(AddExpenseVM::class.java)
+    val viewmodel: AddExpenseVM = hiltViewModel()
 
     // create coroutine
     val coroutineScope = rememberCoroutineScope()
@@ -68,9 +67,10 @@ fun AddExpence(navController: NavController){
                 })
 
             Box(
-                modifier = Modifier.fillMaxWidth()
-                    .padding(top = 60.dp, start =16.dp, end = 16.dp )
-                    .constrainAs(nameRow){
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 60.dp, start = 16.dp, end = 16.dp)
+                    .constrainAs(nameRow) {
                         top.linkTo(parent.top)
                         start.linkTo(parent.start)
                         end.linkTo(parent.end)
@@ -79,7 +79,8 @@ fun AddExpence(navController: NavController){
                     imageVector = Icons.Default.ArrowBack,
                     contentDescription = "Back",
                     tint = Color.White,
-                    modifier = Modifier.align(Alignment.CenterStart)
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
                         .clickable {
                             navController.popBackStack()
                         }
@@ -89,23 +90,27 @@ fun AddExpence(navController: NavController){
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
-                    modifier =  Modifier.padding(16.dp)
+                    modifier =  Modifier
+                        .padding(16.dp)
                         .align(Alignment.Center)
                 )
                 // back button
                 Image(
                     painter = painterResource(R.drawable.ic_dot),
                     contentDescription = null,
-                    modifier = Modifier.align(Alignment.CenterEnd)
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
                         .size(21.dp)
                 )
             }
 
-            DataForm(modifier = Modifier.padding(top = 60.dp).constrainAs(card){
-                top.linkTo(nameRow.bottom)
-                start.linkTo(parent.start)
-                end.linkTo(parent.end)
-            }, onAddExpenseClick = {
+            DataForm(modifier = Modifier
+                .padding(top = 60.dp)
+                .constrainAs(card) {
+                    top.linkTo(nameRow.bottom)
+                    start.linkTo(parent.start)
+                    end.linkTo(parent.end)
+                }, onAddExpenseClick = {
                 coroutineScope.launch {
                     if(viewmodel.addExpense(it)){
                         navController.popBackStack()
@@ -139,7 +144,9 @@ fun DataForm(modifier: Modifier, onAddExpenseClick:(model:ExpenseEntity)->Unit) 
     }
 
     Column(
-        modifier = modifier.padding(16.dp).fillMaxWidth()
+        modifier = modifier
+            .padding(16.dp)
+            .fillMaxWidth()
             .shadow(16.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(Color.White)
@@ -174,7 +181,9 @@ fun DataForm(modifier: Modifier, onAddExpenseClick:(model:ExpenseEntity)->Unit) 
         OutlinedTextField(
             value = if(date.value == 0L) "" else Utils.formatDateToHumanReadableForm(date.value),
             onValueChange = {},
-            modifier = Modifier.fillMaxWidth().clickable { dateDialogVisibility.value = true },
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { dateDialogVisibility.value = true },
             enabled = false,
             colors = OutlinedTextFieldDefaults.colors(
                 disabledTextColor = Color.Black,

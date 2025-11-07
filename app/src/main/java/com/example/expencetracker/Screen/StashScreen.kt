@@ -38,13 +38,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.expencetracker.R
 import com.example.expencetracker.Utils
-import com.example.expencetracker.viewmodel.HomeVM
 import com.example.expencetracker.viewmodel.StashVM
-import com.example.expencetracker.viewmodel.StashVMFactory
 import com.example.expencetracker.widget.ExpenceTextView
 import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.components.XAxis
@@ -57,16 +55,18 @@ import com.github.mikephil.charting.formatter.ValueFormatter
 @Composable
 fun StashScreen(navController: NavController){
     var expanded by remember { mutableStateOf(false) } // for menu option
-
+    var selectedOption by remember { mutableStateOf("TopExpense") } // for selected option to show according data
     Scaffold(topBar = {
         Box(
-            modifier = Modifier.fillMaxWidth()
-                .padding(top = 16.dp, start =16.dp, end = 16.dp, bottom = 8.dp )) {
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 8.dp)) {
             Icon(
                 imageVector = Icons.Default.ArrowBack,
                 contentDescription = "Back",
                 tint = Color.Black,
-                modifier = Modifier.align(Alignment.CenterStart)
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
                     .clickable {
                         navController.popBackStack()
                     }
@@ -75,10 +75,11 @@ fun StashScreen(navController: NavController){
                 text = "Statistics",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                modifier =  Modifier.padding(16.dp)
+                modifier =  Modifier
+                    .padding(16.dp)
                     .align(Alignment.Center)
             )
-            // back button
+            // menu button
             IconButton(
                 onClick = { expanded = !expanded },
                 modifier = Modifier.align(Alignment.CenterEnd)
@@ -96,7 +97,7 @@ fun StashScreen(navController: NavController){
                     DropdownMenuItem(
                         text = {
                             ExpenceTextView(
-                                "TopIncome",
+                                "Top Income",
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .align(Alignment.CenterHorizontally),
@@ -104,14 +105,15 @@ fun StashScreen(navController: NavController){
                             )
                         },
                         onClick = {
-
+                            selectedOption = "TopIncome"
+                            expanded = false
                         }
                     )
 
                     DropdownMenuItem(
                         text = {
                             ExpenceTextView(
-                                "TopExpense",
+                                "Top Expense",
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .align(Alignment.CenterHorizontally),
@@ -119,7 +121,8 @@ fun StashScreen(navController: NavController){
                             )
                         },
                         onClick = {
-
+                            selectedOption = "TopExpense"
+                            expanded = false
                         }
                     )
 
@@ -128,43 +131,123 @@ fun StashScreen(navController: NavController){
             }
         }
     }) {
-        // inital viewmodel and get data from viewmodel
-        val viewModel = StashVMFactory(navController.context).create(StashVM::class.java)
+        // Initialize viewmodel and get data from viewmodel
+        val context = LocalContext.current
+        val viewModel: StashVM = hiltViewModel()
         val dataState = viewModel.entries.collectAsState(emptyList())
         val topExpense = viewModel.topEntries.collectAsState(initial = emptyList())
         val topIncome = viewModel.topIncome.collectAsState(initial = emptyList())
+        val incomeChartData = viewModel.incomeChartEntries.collectAsState(initial = emptyList())
+
         Column(modifier = Modifier.padding(it)) {
-            val entris = viewModel.getEntriesForChart(dataState.value)
-        LineChart(entries = entris)
-            Spacer(modifier = Modifier.height(16.dp))
-            TransactionList(
-                Modifier, list = topExpense.value, "Top Spending"
+            // Get chart entries based on selected option
+            val chartEntries = when (selectedOption) {
+                "TopIncome" -> viewModel.getTopEntriesForIncome(incomeChartData.value)
+                else -> viewModel.getEntriesForChart(dataState.value)
+            }
+
+            // Pass the dynamic chart entries and selected option
+            LineChart(
+                entries = chartEntries, 
+                selectedOption = selectedOption
             )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Show data according to the selected option
+            val dataToShow = when(selectedOption){
+                "TopIncome" -> topIncome.value
+                else -> topExpense.value
+            }
+
+            // Show different title based on selection
+            val listTitle = when (selectedOption) {
+                "TopIncome" -> "Top Income"
+                else -> "Top Spending"
+            }
+
+            // Debug: Log data availability (remove this in production)
+            if (selectedOption == "TopIncome" && topIncome.value.isEmpty()) {
+                // Show a message when no income data is found
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    ExpenceTextView(
+                        text = "No income data found. Add some income entries first!",
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center,
+                        color = Color.Gray
+                    )
+                }
+            } else {
+                TransactionList(
+                    modifier = Modifier,
+                    list = dataToShow,
+                    title = listTitle
+                )
+            }
         }
     }
 }
 
 @Composable
-fun LineChart(entries: List<Entry>){
-
+fun LineChart(entries: List<Entry>, selectedOption: String) {
     val context = LocalContext.current
+
+    if (entries.isEmpty()) {
+        // Show a placeholder when no data is available
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(250.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            ExpenceTextView(
+                text = "No data available for chart",
+                fontSize = 16.sp,
+                color = Color.Gray
+            )
+        }
+        return
+    }
+
     AndroidView(factory = {
         // this factory create layout file
         val view = LayoutInflater.from(context).inflate(R.layout.stash_line_chart, null)
         view
-    }, modifier = Modifier.fillMaxWidth().height(250.dp)){ view->
+    }, modifier = Modifier
+        .fillMaxWidth()
+        .height(250.dp)){ view->
         val lineChart = view.findViewById<LineChart>(R.id.lineChart)
-        val dataSet = LineDataSet(entries,"Expense").apply {
-            color = android.graphics.Color.parseColor("#FF2F7E79")
+
+        // Set chart label and color based on selected option
+        val chartLabel = if (selectedOption == "TopIncome") "Income" else "Expense"
+        val chartColor = if (selectedOption == "TopIncome")
+            android.graphics.Color.parseColor("#FF4CAF50") // Green for income
+        else
+            android.graphics.Color.parseColor("#FF2F7E79") // Original teal for expense
+
+        val dataSet = LineDataSet(entries, chartLabel).apply {
+            color = chartColor
             valueTextColor = android.graphics.Color.BLACK
             lineWidth = 3f
             axisDependency = YAxis.AxisDependency.RIGHT
             setDrawFilled(true)
             mode = LineDataSet.Mode.CUBIC_BEZIER
             valueTextSize = 12f
-            valueTextColor = android.graphics.Color.parseColor("#FF2F7E79")
-            // link the gradinet drawble into the chart
-            val drawable = ContextCompat.getDrawable(context, R.drawable.chart_gradient)
+            valueTextColor = chartColor
+
+            // Use different gradient for income vs expense
+            val drawable = if (selectedOption == "TopIncome") {
+                ContextCompat.getDrawable(
+                    context,
+                    R.drawable.income_chart_gradient
+                ) // Green gradient for income
+            } else {
+                ContextCompat.getDrawable(context, R.drawable.chart_gradient)
+            }
             drawable?.let {
                 fillDrawable = it
             }
