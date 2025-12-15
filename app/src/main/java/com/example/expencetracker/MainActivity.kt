@@ -11,9 +11,13 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.expencetracker.ui.theme.ExpenceTrackerTheme
+import com.example.expencetracker.ui.theme.ThemeManager
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -22,16 +26,17 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            ExpenceTrackerTheme {
+            val context = LocalContext.current
+            val isDarkMode by ThemeManager.isDarkMode(context).collectAsState(initial = false)
+
+            ExpenceTrackerTheme(darkTheme = isDarkMode, dynamicColor = false) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
                        NavHostScreen()
                 }
-                }
             }
         }
     }
-
-
+}

@@ -3,6 +3,7 @@ package com.example.expencetracker.di
 import android.content.Context
 import androidx.room.Room
 import com.example.expencetracker.data.ExpenseDatabase
+import com.example.expencetracker.data.dao.BudgetDao
 import com.example.expencetracker.data.dao.ExpenseDao
 import dagger.Module
 import dagger.Provides
@@ -22,12 +23,21 @@ object DatabaseModule {
             context,
             ExpenseDatabase::class.java,
             "expense_database"
-        ).build()
+        )
+            .addMigrations(ExpenseDatabase.MIGRATION_1_2)
+            .fallbackToDestructiveMigration()
+            .build()
     }
 
     @Provides
     @Singleton
     fun provideExpenseDao(database: ExpenseDatabase): ExpenseDao {
         return database.expenseDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideBudgetDao(database: ExpenseDatabase): BudgetDao {
+        return database.budgetDao()
     }
 }

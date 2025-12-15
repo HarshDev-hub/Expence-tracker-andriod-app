@@ -2,34 +2,29 @@ package com.example.expencetracker.Screen
 
 import android.view.LayoutInflater
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.TrendingDown
+import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -42,233 +37,635 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.expencetracker.R
 import com.example.expencetracker.Utils
+import com.example.expencetracker.data.model.ExpenseEntity
 import com.example.expencetracker.viewmodel.StashVM
-import com.example.expencetracker.widget.ExpenceTextView
 import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.components.XAxis
-import com.github.mikephil.charting.components.YAxis
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
 import com.github.mikephil.charting.formatter.ValueFormatter
 
+// Premium Color Palette
+private val PrimaryBlue = Color(0xFF5B8DEE)
+private val DarkBlue = Color(0xFF4A7BD9)
+private val LightBlue = Color(0xFFE8F1FF)
+private val AccentGreen = Color(0xFF00C9A7)
+private val AccentOrange = Color(0xFFFF9671)
+private val AccentRed = Color(0xFFFF6B6B)
+private val AccentPurple = Color(0xFF9C27B0)
+private val BackgroundLight = Color(0xFFF8F9FD)
+private val CardBackground = Color(0xFFFFFFFF)
+private val TextDark = Color(0xFF1A2138)
+private val TextGray = Color(0xFF8F92A1)
+
 @Composable
-fun StashScreen(navController: NavController){
-    var expanded by remember { mutableStateOf(false) } // for menu option
-    var selectedOption by remember { mutableStateOf("TopExpense") } // for selected option to show according data
-    Scaffold(topBar = {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 8.dp)) {
-            Icon(
-                imageVector = Icons.Default.ArrowBack,
-                contentDescription = "Back",
-                tint = Color.Black,
+fun StashScreen(navController: NavController) {
+    val viewModel: StashVM = hiltViewModel()
+    var selectedTab by remember { mutableStateOf(0) } // 0=Overview, 1=Income, 2=Expense
+    var selectedPeriod by remember { mutableStateOf(1) } // 0=Day, 1=Month, 2=Year
+
+    val tabs = listOf("Overview", "Income", "Expense")
+    val periods = listOf("Day", "Month", "Year")
+
+    val dataState = viewModel.entries.collectAsState(emptyList())
+    val topExpense = viewModel.topEntries.collectAsState(initial = emptyList())
+    val topIncome = viewModel.topIncome.collectAsState(initial = emptyList())
+    val incomeChartData = viewModel.incomeChartEntries.collectAsState(initial = emptyList())
+
+    // Calculate totals
+    val totalIncome = topIncome.value.sumOf { it.amount }
+    val totalExpense = topExpense.value.sumOf { it.amount }
+    val balance = totalIncome - totalExpense
+
+    Surface(modifier = Modifier.fillMaxSize(), color = BackgroundLight) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Premium Header
+            Box(
                 modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .clickable {
-                        navController.popBackStack()
-                    }
-            )
-            ExpenceTextView(
-                text = "Statistics",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                modifier =  Modifier
-                    .padding(16.dp)
-                    .align(Alignment.Center)
-            )
-            // menu button
-            IconButton(
-                onClick = { expanded = !expanded },
-                modifier = Modifier.align(Alignment.CenterEnd)
+                    .fillMaxWidth()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(PrimaryBlue, DarkBlue),
+                            startY = 0f,
+                            endY = 600f
+                        )
+                    )
+                    .padding(horizontal = 24.dp)
+                    .padding(top = 50.dp, bottom = 30.dp)
             ) {
-                Image(
-                    painter = painterResource(R.drawable.ic_dot),
-                    contentDescription = null,
-                    modifier = Modifier.size(21.dp),
-                    colorFilter = ColorFilter.tint(Color.Black)
-                )
-                DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = {expanded = false}
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    DropdownMenuItem(
-                        text = {
-                            ExpenceTextView(
-                                "Top Income",
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .align(Alignment.CenterHorizontally),
-                                textAlign = TextAlign.End
-                            )
-                        },
-                        onClick = {
-                            selectedOption = "TopIncome"
-                            expanded = false
-                        }
+                    IconButton(
+                        onClick = { navController.popBackStack() },
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.2f))
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color.White
+                        )
+                    }
+
+                    Text(
+                        text = "Statistics",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
                     )
 
-                    DropdownMenuItem(
-                        text = {
-                            ExpenceTextView(
-                                "Top Expense",
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .align(Alignment.CenterHorizontally),
-                                textAlign = TextAlign.End
-                            )
-                        },
-                        onClick = {
-                            selectedOption = "TopExpense"
-                            expanded = false
-                        }
-                    )
-
-
+                    Spacer(modifier = Modifier.size(44.dp))
                 }
             }
-        }
-    }) {
-        // Initialize viewmodel and get data from viewmodel
-        val context = LocalContext.current
-        val viewModel: StashVM = hiltViewModel()
-        val dataState = viewModel.entries.collectAsState(emptyList())
-        val topExpense = viewModel.topEntries.collectAsState(initial = emptyList())
-        val topIncome = viewModel.topIncome.collectAsState(initial = emptyList())
-        val incomeChartData = viewModel.incomeChartEntries.collectAsState(initial = emptyList())
 
-        Column(modifier = Modifier.padding(it)) {
-            // Get chart entries based on selected option
-            val chartEntries = when (selectedOption) {
-                "TopIncome" -> viewModel.getTopEntriesForIncome(incomeChartData.value)
-                else -> viewModel.getEntriesForChart(dataState.value)
-            }
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 90.dp)
+            ) {
+                // Summary Cards (Overlapping)
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .offset(y = (-50).dp)
+                            .padding(horizontal = 24.dp)
+                    ) {
+                        // Balance Card
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .shadow(8.dp, RoundedCornerShape(20.dp)),
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(containerColor = CardBackground)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(24.dp)
+                            ) {
+                                Text(
+                                    text = "Total Balance",
+                                    fontSize = 14.sp,
+                                    color = TextGray
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "₹ ${String.format("%,.0f", balance)}",
+                                    fontSize = 32.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextDark
+                                )
 
-            // Pass the dynamic chart entries and selected option
-            LineChart(
-                entries = chartEntries, 
-                selectedOption = selectedOption
-            )
-            Spacer(modifier = Modifier.height(16.dp))
+                                Spacer(modifier = Modifier.height(20.dp))
 
-            // Show data according to the selected option
-            val dataToShow = when(selectedOption){
-                "TopIncome" -> topIncome.value
-                else -> topExpense.value
-            }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    // Income
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(16.dp))
+                                            .background(AccentGreen.copy(alpha = 0.1f))
+                                            .padding(16.dp)
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(36.dp)
+                                                    .clip(CircleShape)
+                                                    .background(AccentGreen),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.ArrowDownward,
+                                                    contentDescription = null,
+                                                    tint = Color.White,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+                                            Column {
+                                                Text(
+                                                    text = "Income",
+                                                    fontSize = 11.sp,
+                                                    color = TextGray
+                                                )
+                                                Text(
+                                                    text = "₹${
+                                                        String.format(
+                                                            "%,.0f",
+                                                            totalIncome
+                                                        )
+                                                    }",
+                                                    fontSize = 15.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = AccentGreen
+                                                )
+                                            }
+                                        }
+                                    }
 
-            // Show different title based on selection
-            val listTitle = when (selectedOption) {
-                "TopIncome" -> "Top Income"
-                else -> "Top Spending"
-            }
+                                    // Expense
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(16.dp))
+                                            .background(AccentOrange.copy(alpha = 0.1f))
+                                            .padding(16.dp)
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(36.dp)
+                                                    .clip(CircleShape)
+                                                    .background(AccentOrange),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.ArrowUpward,
+                                                    contentDescription = null,
+                                                    tint = Color.White,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+                                            Column {
+                                                Text(
+                                                    text = "Expense",
+                                                    fontSize = 11.sp,
+                                                    color = TextGray
+                                                )
+                                                Text(
+                                                    text = "₹${
+                                                        String.format(
+                                                            "%,.0f",
+                                                            totalExpense
+                                                        )
+                                                    }",
+                                                    fontSize = 15.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = AccentOrange
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
 
-            // Debug: Log data availability (remove this in production)
-            if (selectedOption == "TopIncome" && topIncome.value.isEmpty()) {
-                // Show a message when no income data is found
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    ExpenceTextView(
-                        text = "No income data found. Add some income entries first!",
-                        fontSize = 14.sp,
-                        textAlign = TextAlign.Center,
-                        color = Color.Gray
-                    )
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        // Tab Selector
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = CardBackground),
+                            elevation = CardDefaults.cardElevation(2.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                tabs.forEachIndexed { index, title ->
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(
+                                                when {
+                                                    selectedTab == index && index == 0 -> PrimaryBlue
+                                                    selectedTab == index && index == 1 -> AccentGreen
+                                                    selectedTab == index && index == 2 -> AccentOrange
+                                                    else -> Color.Transparent
+                                                }
+                                            )
+                                            .clickable { selectedTab = index }
+                                            .padding(vertical = 12.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = title,
+                                            fontSize = 14.sp,
+                                            fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal,
+                                            color = if (selectedTab == index) Color.White else TextGray
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
                 }
-            } else {
-                TransactionList(
-                    modifier = Modifier,
-                    list = dataToShow,
-                    title = listTitle
-                )
+
+                // Chart Section
+                item {
+                    Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+                        val chartEntries = when (selectedTab) {
+                            1 -> viewModel.getTopEntriesForIncome(incomeChartData.value)
+                            2 -> viewModel.getEntriesForChart(dataState.value)
+                            else -> viewModel.getEntriesForChart(dataState.value)
+                        }
+
+                        ModernLineChart(
+                            entries = chartEntries,
+                            type = when (selectedTab) {
+                                1 -> "Income"
+                                2 -> "Expense"
+                                else -> "Overview"
+                            }
+                        )
+
+                        Spacer(modifier = Modifier.height(24.dp))
+                    }
+                }
+
+                // Top Transactions
+                item {
+                    Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = when (selectedTab) {
+                                    1 -> "Top Income"
+                                    2 -> "Top Expenses"
+                                    else -> "Recent Transactions"
+                                },
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextDark
+                            )
+
+                            Icon(
+                                imageVector = if (selectedTab == 1) Icons.Default.TrendingUp else Icons.Default.TrendingDown,
+                                contentDescription = null,
+                                tint = if (selectedTab == 1) AccentGreen else AccentOrange,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+                }
+
+                // Transaction List
+                val dataToShow: List<ExpenseEntity> = when (selectedTab) {
+                    1 -> topIncome.value
+                    2 -> topExpense.value
+                    else -> topExpense.value.take(5) + topIncome.value.take(5)
+                }
+
+                if (dataToShow.isEmpty()) {
+                    item {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp)
+                                .height(160.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = CardBackground),
+                            elevation = CardDefaults.cardElevation(2.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.fillMaxSize(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = when (selectedTab) {
+                                        1 -> "💰"
+                                        2 -> "💸"
+                                        else -> "📊"
+                                    },
+                                    fontSize = 48.sp
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    text = "No data available",
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextDark
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = when (selectedTab) {
+                                        1 -> "Add some income entries"
+                                        2 -> "Add some expense entries"
+                                        else -> "Start tracking your finances"
+                                    },
+                                    fontSize = 14.sp,
+                                    color = TextGray,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    items(dataToShow.take(5)) { item ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp, vertical = 6.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = CardBackground),
+                            elevation = CardDefaults.cardElevation(1.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                val icon = Utils.getItemIcon(item)
+
+                                Box(
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(
+                                            if (item.type == "Income")
+                                                AccentGreen.copy(alpha = 0.15f)
+                                            else
+                                                AccentOrange.copy(alpha = 0.15f)
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Image(
+                                        painter = painterResource(icon),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(26.dp)
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(14.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = item.title,
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = TextDark
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "${item.category} • ${item.date}",
+                                        fontSize = 12.sp,
+                                        color = TextGray
+                                    )
+                                }
+
+                                Text(
+                                    text = if (item.type == "Income") "+₹${item.amount.toInt()}" else "-₹${item.amount.toInt()}",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (item.type == "Income") AccentGreen else AccentOrange
+                                )
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
             }
         }
     }
 }
 
 @Composable
-fun LineChart(entries: List<Entry>, selectedOption: String) {
+fun ModernLineChart(entries: List<Entry>, type: String) {
     val context = LocalContext.current
 
     if (entries.isEmpty()) {
-        // Show a placeholder when no data is available
-        Box(
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(250.dp),
-            contentAlignment = Alignment.Center
+                .height(280.dp),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = CardBackground),
+            elevation = CardDefaults.cardElevation(4.dp)
         ) {
-            ExpenceTextView(
-                text = "No data available for chart",
-                fontSize = 16.sp,
-                color = Color.Gray
-            )
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(text = "📊", fontSize = 64.sp)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "No Data Yet",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextDark
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Start adding transactions\nto see beautiful insights",
+                        fontSize = 14.sp,
+                        color = TextGray,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
         }
         return
     }
 
-    AndroidView(factory = {
-        // this factory create layout file
-        val view = LayoutInflater.from(context).inflate(R.layout.stash_line_chart, null)
-        view
-    }, modifier = Modifier
-        .fillMaxWidth()
-        .height(250.dp)){ view->
-        val lineChart = view.findViewById<LineChart>(R.id.lineChart)
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = CardBackground),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(
+                        text = when (type) {
+                            "Income" -> "💰 Income Trend"
+                            "Expense" -> "💸 Spending Trend"
+                            else -> "📊 Financial Overview"
+                        },
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextDark
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Last ${entries.size} transactions",
+                        fontSize = 12.sp,
+                        color = TextGray
+                    )
+                }
 
-        // Set chart label and color based on selected option
-        val chartLabel = if (selectedOption == "TopIncome") "Income" else "Expense"
-        val chartColor = if (selectedOption == "TopIncome")
-            android.graphics.Color.parseColor("#FF4CAF50") // Green for income
-        else
-            android.graphics.Color.parseColor("#FF2F7E79") // Original teal for expense
-
-        val dataSet = LineDataSet(entries, chartLabel).apply {
-            color = chartColor
-            valueTextColor = android.graphics.Color.BLACK
-            lineWidth = 3f
-            axisDependency = YAxis.AxisDependency.RIGHT
-            setDrawFilled(true)
-            mode = LineDataSet.Mode.CUBIC_BEZIER
-            valueTextSize = 12f
-            valueTextColor = chartColor
-
-            // Use different gradient for income vs expense
-            val drawable = if (selectedOption == "TopIncome") {
-                ContextCompat.getDrawable(
-                    context,
-                    R.drawable.income_chart_gradient
-                ) // Green gradient for income
-            } else {
-                ContextCompat.getDrawable(context, R.drawable.chart_gradient)
-            }
-            drawable?.let {
-                fillDrawable = it
-            }
-
-        }
-
-        lineChart.xAxis.valueFormatter =
-            object : ValueFormatter() {
-                override fun getFormattedValue(value: Float): String {
-                    return Utils.formatDateForCHart(value.toLong())
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = when (type) {
+                            "Income" -> AccentGreen.copy(alpha = 0.15f)
+                            "Expense" -> AccentOrange.copy(alpha = 0.15f)
+                            else -> PrimaryBlue.copy(alpha = 0.15f)
+                        }
+                    )
+                ) {
+                    Text(
+                        text = "₹${entries.sumOf { it.y.toDouble() }.toInt()}",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = when (type) {
+                            "Income" -> AccentGreen
+                            "Expense" -> AccentOrange
+                            else -> PrimaryBlue
+                        },
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                    )
                 }
             }
 
-        lineChart.data = LineData(dataSet)
-        lineChart.axisLeft.isEnabled = false
-        lineChart.axisRight.isEnabled = false
-        lineChart.axisRight.setDrawGridLines(false)
-        lineChart.axisLeft.setDrawGridLines(false)
-        lineChart.xAxis.setDrawGridLines(false)
-        lineChart.xAxis.setDrawAxisLine(false)
-        lineChart.xAxis.position = XAxis.XAxisPosition.BOTTOM
-        lineChart.invalidate()
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Chart
+            AndroidView(
+                factory = {
+                    val view = LayoutInflater.from(context).inflate(R.layout.stash_line_chart, null)
+                    view
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+            ) { view ->
+                val lineChart = view.findViewById<LineChart>(R.id.lineChart)
+
+                val chartColor = when (type) {
+                    "Income" -> android.graphics.Color.parseColor("#00C9A7")
+                    "Expense" -> android.graphics.Color.parseColor("#FF9671")
+                    else -> android.graphics.Color.parseColor("#5B8DEE")
+                }
+
+                val dataSet = LineDataSet(entries, "").apply {
+                    color = chartColor
+                    lineWidth = 3f
+                    setCircleColor(chartColor)
+                    circleRadius = 5f
+                    circleHoleRadius = 2.5f
+                    setDrawCircleHole(true)
+                    setDrawFilled(true)
+                    fillAlpha = 30
+
+                    val drawable = when (type) {
+                        "Income" -> ContextCompat.getDrawable(
+                            context,
+                            R.drawable.income_chart_gradient
+                        )
+
+                        else -> ContextCompat.getDrawable(context, R.drawable.chart_gradient)
+                    }
+                    drawable?.let { fillDrawable = it }
+
+                    valueTextSize = 10f
+                    valueTextColor = chartColor
+                    setDrawValues(false)
+                    mode = LineDataSet.Mode.CUBIC_BEZIER
+                    cubicIntensity = 0.2f
+                }
+
+                lineChart.apply {
+                    data = LineData(dataSet)
+                    description.isEnabled = false
+                    legend.isEnabled = false
+
+                    xAxis.apply {
+                        position = XAxis.XAxisPosition.BOTTOM
+                        setDrawGridLines(false)
+                        textColor = android.graphics.Color.parseColor("#8F92A1")
+                        textSize = 10f
+                        granularity = 1f
+                        valueFormatter = object : ValueFormatter() {
+                            override fun getFormattedValue(value: Float): String {
+                                return Utils.formatDateForCHart(value.toLong())
+                            }
+                        }
+                    }
+
+                    axisLeft.isEnabled = false
+                    axisRight.apply {
+                        isEnabled = true
+                        setDrawGridLines(true)
+                        gridColor = android.graphics.Color.parseColor("#F5F5F5")
+                        textColor = android.graphics.Color.parseColor("#8F92A1")
+                        textSize = 10f
+                    }
+
+                    setTouchEnabled(true)
+                    isDragEnabled = true
+                    setScaleEnabled(false)
+                    animateXY(1000, 1000)
+                    invalidate()
+                }
+            }
+        }
     }
 }
