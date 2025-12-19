@@ -70,6 +70,22 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    fun signInWithGoogle(account: com.google.android.gms.auth.api.signin.GoogleSignInAccount) {
+        viewModelScope.launch {
+            _authState.value = AuthState.Loading
+            val result = authManager.signInWithGoogle(account)
+            result.fold(
+                onSuccess = { user ->
+                    _currentUser.value = user
+                    _authState.value = AuthState.Authenticated
+                },
+                onFailure = { exception ->
+                    _authState.value = AuthState.Error(exception.message ?: "Google Sign-In failed")
+                }
+            )
+        }
+    }
+
     fun signOut() {
         authManager.signOut()
         _currentUser.value = null

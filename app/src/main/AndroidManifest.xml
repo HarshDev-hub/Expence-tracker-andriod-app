@@ -68,6 +68,7 @@
             <intent-filter>
                 <action android:name="com.example.expencetracker.DAILY_REMINDER" />
                 <action android:name="com.example.expencetracker.BUDGET_ALERT" />
+                <action android:name="com.example.expencetracker.MONTHLY_REPORT" />
             </intent-filter>
         </receiver>
     </application>

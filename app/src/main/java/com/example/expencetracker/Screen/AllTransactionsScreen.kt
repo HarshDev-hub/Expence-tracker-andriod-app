@@ -33,23 +33,21 @@ import com.example.expencetracker.data.model.ExpenseEntity
 import com.example.expencetracker.viewmodel.HomeVM
 import kotlinx.coroutines.launch
 
-// Premium Color Palette
-private val PrimaryBlue = Color(0xFF5B8DEE)
-private val DarkBlue = Color(0xFF4A7BD9)
-private val LightBlue = Color(0xFFE8F1FF)
-private val AccentGreen = Color(0xFF00C9A7)
-private val AccentOrange = Color(0xFFFF9671)
-private val AccentRed = Color(0xFFFF6B6B)
-private val BackgroundLight = Color(0xFFF8F9FD)
-private val CardBackground = Color(0xFFFFFFFF)
-private val TextDark = Color(0xFF1A2138)
-private val TextGray = Color(0xFF8F92A1)
-
 @Composable
 fun AllTransactionsScreen(navController: NavController) {
     val viewModel: HomeVM = hiltViewModel()
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
+
+    // Get theme colors
+    val backgroundColor = MaterialTheme.colorScheme.background
+    val cardColor = MaterialTheme.colorScheme.surface
+    val textColor = MaterialTheme.colorScheme.onSurface
+    val textSecondary = MaterialTheme.colorScheme.onSurfaceVariant
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val primaryContainer = MaterialTheme.colorScheme.primaryContainer
+    val incomeColor = MaterialTheme.colorScheme.tertiary
+    val expenseColor = MaterialTheme.colorScheme.error
 
     var showDeleteDialog by remember { mutableStateOf(false) }
     var itemToDelete by remember { mutableStateOf<ExpenseEntity?>(null) }
@@ -70,21 +68,21 @@ fun AllTransactionsScreen(navController: NavController) {
     val totalExpense = filteredTransactions.filter { it.type == "Expense" }.sumOf { it.amount }
     val balance = totalIncome - totalExpense
 
-    Surface(modifier = Modifier.fillMaxSize(), color = BackgroundLight) {
+    Surface(modifier = Modifier.fillMaxSize(), color = backgroundColor) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // Premium Header
+            // Premium Header - Fixed at top
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(
                         Brush.verticalGradient(
-                            colors = listOf(PrimaryBlue, DarkBlue),
+                            colors = listOf(primaryColor, primaryContainer),
                             startY = 0f,
                             endY = 400f
                         )
                     )
                     .padding(horizontal = 24.dp)
-                    .padding(top = 50.dp, bottom = 30.dp)
+                    .padding(top = 50.dp, bottom = 20.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -96,12 +94,12 @@ fun AllTransactionsScreen(navController: NavController) {
                         modifier = Modifier
                             .size(44.dp)
                             .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.2f))
+                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
                     ) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Back",
-                            tint = Color.White
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
 
@@ -109,7 +107,7 @@ fun AllTransactionsScreen(navController: NavController) {
                         text = "All Transactions",
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
                     Spacer(modifier = Modifier.size(44.dp))
@@ -132,27 +130,26 @@ fun AllTransactionsScreen(navController: NavController) {
                             text = "No Transactions Yet",
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
-                            color = TextDark
+                            color = textColor
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
                             text = "Start tracking your income and expenses",
                             fontSize = 15.sp,
-                            color = TextGray
+                            color = textSecondary
                         )
                     }
                 }
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 90.dp)
+                    contentPadding = PaddingValues(bottom = 90.dp, top = 16.dp)
                 ) {
-                    // Summary Card (Overlapping)
+                    // Summary Card - Now properly below header
                     item {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .offset(y = (-50).dp)
                                 .padding(horizontal = 24.dp)
                         ) {
                             Card(
@@ -160,7 +157,7 @@ fun AllTransactionsScreen(navController: NavController) {
                                     .fillMaxWidth()
                                     .shadow(8.dp, RoundedCornerShape(20.dp)),
                                 shape = RoundedCornerShape(20.dp),
-                                colors = CardDefaults.cardColors(containerColor = CardBackground)
+                                colors = CardDefaults.cardColors(containerColor = cardColor)
                             ) {
                                 Column(
                                     modifier = Modifier
@@ -175,14 +172,14 @@ fun AllTransactionsScreen(navController: NavController) {
                                             Text(
                                                 text = "Total Transactions",
                                                 fontSize = 13.sp,
-                                                color = TextGray
+                                                color = textSecondary
                                             )
                                             Spacer(modifier = Modifier.height(4.dp))
                                             Text(
                                                 text = "${filteredTransactions.size}",
                                                 fontSize = 28.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = TextDark
+                                                color = textColor
                                             )
                                         }
 
@@ -190,14 +187,14 @@ fun AllTransactionsScreen(navController: NavController) {
                                             Text(
                                                 text = "Balance",
                                                 fontSize = 13.sp,
-                                                color = TextGray
+                                                color = textSecondary
                                             )
                                             Spacer(modifier = Modifier.height(4.dp))
                                             Text(
                                                 text = "₹${String.format("%,.0f", balance)}",
                                                 fontSize = 24.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = if (balance >= 0) AccentGreen else AccentRed
+                                                color = if (balance >= 0) incomeColor else expenseColor
                                             )
                                         }
                                     }
@@ -213,14 +210,14 @@ fun AllTransactionsScreen(navController: NavController) {
                                             modifier = Modifier
                                                 .weight(1f)
                                                 .clip(RoundedCornerShape(12.dp))
-                                                .background(AccentGreen.copy(alpha = 0.1f))
+                                                .background(incomeColor.copy(alpha = 0.1f))
                                                 .padding(12.dp)
                                         ) {
                                             Column {
                                                 Text(
                                                     text = "Income",
                                                     fontSize = 11.sp,
-                                                    color = TextGray
+                                                    color = textSecondary
                                                 )
                                                 Spacer(modifier = Modifier.height(4.dp))
                                                 Text(
@@ -232,7 +229,7 @@ fun AllTransactionsScreen(navController: NavController) {
                                                     }",
                                                     fontSize = 16.sp,
                                                     fontWeight = FontWeight.Bold,
-                                                    color = AccentGreen
+                                                    color = incomeColor
                                                 )
                                             }
                                         }
@@ -242,14 +239,14 @@ fun AllTransactionsScreen(navController: NavController) {
                                             modifier = Modifier
                                                 .weight(1f)
                                                 .clip(RoundedCornerShape(12.dp))
-                                                .background(AccentOrange.copy(alpha = 0.1f))
+                                                .background(expenseColor.copy(alpha = 0.1f))
                                                 .padding(12.dp)
                                         ) {
                                             Column {
                                                 Text(
                                                     text = "Expense",
                                                     fontSize = 11.sp,
-                                                    color = TextGray
+                                                    color = textSecondary
                                                 )
                                                 Spacer(modifier = Modifier.height(4.dp))
                                                 Text(
@@ -261,7 +258,7 @@ fun AllTransactionsScreen(navController: NavController) {
                                                     }",
                                                     fontSize = 16.sp,
                                                     fontWeight = FontWeight.Bold,
-                                                    color = AccentOrange
+                                                    color = expenseColor
                                                 )
                                             }
                                         }
@@ -275,7 +272,7 @@ fun AllTransactionsScreen(navController: NavController) {
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = CardBackground),
+                                colors = CardDefaults.cardColors(containerColor = cardColor),
                                 elevation = CardDefaults.cardElevation(2.dp)
                             ) {
                                 Row(
@@ -291,9 +288,9 @@ fun AllTransactionsScreen(navController: NavController) {
                                                 .clip(RoundedCornerShape(12.dp))
                                                 .background(
                                                     when {
-                                                        selectedFilter == index && index == 0 -> PrimaryBlue
-                                                        selectedFilter == index && index == 1 -> AccentGreen
-                                                        selectedFilter == index && index == 2 -> AccentOrange
+                                                        selectedFilter == index && index == 0 -> primaryColor
+                                                        selectedFilter == index && index == 1 -> incomeColor
+                                                        selectedFilter == index && index == 2 -> expenseColor
                                                         else -> Color.Transparent
                                                     }
                                                 )
@@ -305,7 +302,7 @@ fun AllTransactionsScreen(navController: NavController) {
                                                 text = title,
                                                 fontSize = 14.sp,
                                                 fontWeight = if (selectedFilter == index) FontWeight.Bold else FontWeight.Normal,
-                                                color = if (selectedFilter == index) Color.White else TextGray
+                                                color = if (selectedFilter == index) MaterialTheme.colorScheme.onPrimary else textSecondary
                                             )
                                         }
                                     }
@@ -325,7 +322,7 @@ fun AllTransactionsScreen(navController: NavController) {
                                     .padding(horizontal = 24.dp)
                                     .height(160.dp),
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = CardBackground),
+                                colors = CardDefaults.cardColors(containerColor = cardColor),
                                 elevation = CardDefaults.cardElevation(2.dp)
                             ) {
                                 Box(
@@ -346,7 +343,7 @@ fun AllTransactionsScreen(navController: NavController) {
                                             text = "No ${filters[selectedFilter].lowercase()} found",
                                             fontSize = 16.sp,
                                             fontWeight = FontWeight.SemiBold,
-                                            color = TextDark
+                                            color = textColor
                                         )
                                     }
                                 }
@@ -372,23 +369,24 @@ fun AllTransactionsScreen(navController: NavController) {
                                 state = dismissState,
                                 enableDismissFromStartToEnd = false,
                                 backgroundContent = {
-                                    val backgroundColor = when (dismissState.dismissDirection) {
-                                        SwipeToDismissBoxValue.EndToStart -> AccentRed
+                                    val backgroundColorDismiss =
+                                        when (dismissState.dismissDirection) {
+                                            SwipeToDismissBoxValue.EndToStart -> expenseColor
                                         else -> Color.Transparent
                                     }
 
                                     Box(
                                         modifier = Modifier
                                             .fillMaxSize()
-                                            .background(backgroundColor)
+                                            .background(backgroundColorDismiss)
                                             .padding(horizontal = 24.dp),
                                         contentAlignment = Alignment.CenterEnd
                                     ) {
-                                        if (backgroundColor != Color.Transparent) {
+                                        if (backgroundColorDismiss != Color.Transparent) {
                                             Icon(
                                                 imageVector = Icons.Default.Delete,
                                                 contentDescription = "Delete",
-                                                tint = Color.White,
+                                                tint = MaterialTheme.colorScheme.onError,
                                                 modifier = Modifier.size(32.dp)
                                             )
                                         }
@@ -416,14 +414,14 @@ fun AllTransactionsScreen(navController: NavController) {
                     text = "Delete Transaction",
                     fontWeight = FontWeight.Bold,
                     fontSize = 20.sp,
-                    color = TextDark
+                    color = textColor
                 )
             },
             text = {
                 Text(
                     text = "Are you sure you want to delete this transaction?",
                     fontSize = 15.sp,
-                    color = TextGray
+                    color = textSecondary
                 )
             },
             confirmButton = {
@@ -442,7 +440,7 @@ fun AllTransactionsScreen(navController: NavController) {
                         showDeleteDialog = false
                         itemToDelete = null
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = AccentRed),
+                    colors = ButtonDefaults.buttonColors(containerColor = expenseColor),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text("Delete", modifier = Modifier.padding(horizontal = 16.dp))
@@ -453,7 +451,7 @@ fun AllTransactionsScreen(navController: NavController) {
                     showDeleteDialog = false
                     itemToDelete = null
                 }) {
-                    Text("Cancel", color = TextGray)
+                    Text("Cancel", color = textSecondary)
                 }
             },
             shape = RoundedCornerShape(24.dp)
@@ -464,13 +462,18 @@ fun AllTransactionsScreen(navController: NavController) {
 @Composable
 fun TransactionCard(item: ExpenseEntity) {
     val icon = Utils.getItemIcon(item)
+    val cardColor = MaterialTheme.colorScheme.surface
+    val textColor = MaterialTheme.colorScheme.onSurface
+    val textSecondary = MaterialTheme.colorScheme.onSurfaceVariant
+    val incomeColor = MaterialTheme.colorScheme.tertiary
+    val expenseColor = MaterialTheme.colorScheme.error
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp, vertical = 6.dp),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = CardBackground),
+        colors = CardDefaults.cardColors(containerColor = cardColor),
         elevation = CardDefaults.cardElevation(1.dp)
     ) {
         Row(
@@ -485,9 +488,9 @@ fun TransactionCard(item: ExpenseEntity) {
                     .clip(RoundedCornerShape(12.dp))
                     .background(
                         if (item.type == "Income")
-                            AccentGreen.copy(alpha = 0.15f)
+                            incomeColor.copy(alpha = 0.15f)
                         else
-                            AccentOrange.copy(alpha = 0.15f)
+                            expenseColor.copy(alpha = 0.15f)
                     ),
                 contentAlignment = Alignment.Center
             ) {
@@ -505,13 +508,13 @@ fun TransactionCard(item: ExpenseEntity) {
                     text = item.title,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = TextDark
+                    color = textColor
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "${item.category} • ${item.date}",
                     fontSize = 12.sp,
-                    color = TextGray
+                    color = textSecondary
                 )
             }
 
@@ -519,7 +522,7 @@ fun TransactionCard(item: ExpenseEntity) {
                 text = if (item.type == "Income") "+₹${item.amount.toInt()}" else "-₹${item.amount.toInt()}",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                color = if (item.type == "Income") AccentGreen else AccentOrange
+                color = if (item.type == "Income") incomeColor else expenseColor
             )
         }
     }

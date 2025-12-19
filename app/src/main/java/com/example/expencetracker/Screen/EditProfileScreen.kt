@@ -46,6 +46,14 @@ fun EditProfileScreen(navController: NavController, viewModel: AuthViewModel = h
     val authState by viewModel.authState.collectAsState()
     val context = LocalContext.current
 
+    // Get theme colors
+    val backgroundColor = MaterialTheme.colorScheme.background
+    val surfaceColor = MaterialTheme.colorScheme.surface
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val textColor = MaterialTheme.colorScheme.onSurface
+    val textSecondary = MaterialTheme.colorScheme.onSurfaceVariant
+    val onPrimaryColor = MaterialTheme.colorScheme.onPrimary
+
     var name by remember { mutableStateOf(currentUser?.displayName ?: "") }
     var email by remember { mutableStateOf(currentUser?.email ?: "") }
     var profileImageUri by remember { mutableStateOf<Uri?>(null) }
@@ -131,7 +139,8 @@ fun EditProfileScreen(navController: NavController, viewModel: AuthViewModel = h
 
     Box(modifier = Modifier
         .fillMaxSize()
-        .background(Color(0xFFF5F5F5))) {
+        .background(backgroundColor)
+    ) {
         Column(modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())) {
@@ -139,7 +148,8 @@ fun EditProfileScreen(navController: NavController, viewModel: AuthViewModel = h
             Box(modifier = Modifier
                 .fillMaxWidth()
                 .height(100.dp)
-                .background(Zinc)) {
+                .background(primaryColor)
+            ) {
                 Row(
                     modifier = Modifier
                         .fillMaxSize()
@@ -150,7 +160,7 @@ fun EditProfileScreen(navController: NavController, viewModel: AuthViewModel = h
                         Icon(
                             Icons.Default.ArrowBack,
                             contentDescription = "Back",
-                            tint = Color.White
+                            tint = onPrimaryColor
                         )
                     }
                     Spacer(modifier = Modifier.width(16.dp))
@@ -158,7 +168,7 @@ fun EditProfileScreen(navController: NavController, viewModel: AuthViewModel = h
                         text = "Edit Profile",
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = onPrimaryColor
                     )
                 }
             }
@@ -180,7 +190,7 @@ fun EditProfileScreen(navController: NavController, viewModel: AuthViewModel = h
                             modifier = Modifier
                                 .size(140.dp)
                                 .clip(CircleShape)
-                                .background(Color.LightGray),
+                                .background(surfaceColor),
                             contentScale = ContentScale.Crop
                         )
                     } else {
@@ -188,14 +198,14 @@ fun EditProfileScreen(navController: NavController, viewModel: AuthViewModel = h
                             modifier = Modifier
                                 .size(140.dp)
                                 .clip(CircleShape)
-                                .background(Zinc),
+                                .background(surfaceColor),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 Icons.Default.Person,
                                 contentDescription = "Profile",
                                 modifier = Modifier.size(80.dp),
-                                tint = Color.White
+                                tint = textColor
                             )
                         }
                     }
@@ -203,7 +213,7 @@ fun EditProfileScreen(navController: NavController, viewModel: AuthViewModel = h
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .background(Zinc)
+                            .background(primaryColor)
                             .align(Alignment.BottomEnd)
                             .clickable { showImagePickerDialog = true },
                         contentAlignment = Alignment.Center
@@ -211,7 +221,7 @@ fun EditProfileScreen(navController: NavController, viewModel: AuthViewModel = h
                         Icon(
                             Icons.Default.Edit,
                             contentDescription = "Edit Photo",
-                            tint = Color.White,
+                            tint = onPrimaryColor,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -221,7 +231,7 @@ fun EditProfileScreen(navController: NavController, viewModel: AuthViewModel = h
                 Text(
                     text = "Tap to change photo",
                     fontSize = 14.sp,
-                    color = Color.Gray,
+                    color = textSecondary,
                     modifier = Modifier.clickable { showImagePickerDialog = true })
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -235,8 +245,8 @@ fun EditProfileScreen(navController: NavController, viewModel: AuthViewModel = h
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Zinc,
-                        focusedLabelColor = Zinc
+                        focusedBorderColor = primaryColor,
+                        focusedLabelColor = primaryColor
                     )
                 )
 
@@ -250,7 +260,11 @@ fun EditProfileScreen(navController: NavController, viewModel: AuthViewModel = h
                     leadingIcon = { Icon(Icons.Default.Email, contentDescription = "Email") },
                     trailingIcon = {
                         IconButton(onClick = { showEmailDialog = true }) {
-                            Icon(Icons.Default.Edit, contentDescription = "Edit Email", tint = Zinc)
+                            Icon(
+                                Icons.Default.Edit,
+                                contentDescription = "Edit Email",
+                                tint = primaryColor
+                            )
                         }
                     },
                     readOnly = true,
@@ -259,8 +273,8 @@ fun EditProfileScreen(navController: NavController, viewModel: AuthViewModel = h
                         .clickable { showEmailDialog = true },
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Zinc,
-                        unfocusedBorderColor = Color.Gray
+                        focusedBorderColor = primaryColor,
+                        unfocusedBorderColor = textSecondary
                     )
                 )
 
@@ -268,7 +282,7 @@ fun EditProfileScreen(navController: NavController, viewModel: AuthViewModel = h
                 Text(
                     text = "Click to change email",
                     fontSize = 12.sp,
-                    color = Zinc,
+                    color = primaryColor,
                     modifier = Modifier
                         .align(Alignment.End)
                         .clickable { showEmailDialog = true })
@@ -280,7 +294,7 @@ fun EditProfileScreen(navController: NavController, viewModel: AuthViewModel = h
                     onClick = { showPasswordDialog = true },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Zinc)
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = primaryColor)
                 ) {
                     Icon(Icons.Default.Lock, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
@@ -303,12 +317,12 @@ fun EditProfileScreen(navController: NavController, viewModel: AuthViewModel = h
                         .fillMaxWidth()
                         .height(56.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Zinc),
+                    colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
                     enabled = authState !is AuthState.Loading
                 ) {
                     if (authState is AuthState.Loading) {
                         CircularProgressIndicator(
-                            color = Color.White,
+                            color = onPrimaryColor,
                             modifier = Modifier.size(24.dp)
                         )
                     } else {
@@ -336,7 +350,7 @@ fun EditProfileScreen(navController: NavController, viewModel: AuthViewModel = h
                             showImagePickerDialog = false; galleryLauncher.launch("image/*")
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(Zinc)
+                        colors = ButtonDefaults.buttonColors(primaryColor)
                     ) {
                         Text("Gallery")
                     }
@@ -356,7 +370,7 @@ fun EditProfileScreen(navController: NavController, viewModel: AuthViewModel = h
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(Color.Gray)
+                        colors = ButtonDefaults.buttonColors(surfaceColor)
                     ) {
                         Text("Camera")
                     }
@@ -421,7 +435,7 @@ fun EditProfileScreen(navController: NavController, viewModel: AuthViewModel = h
 
                         else -> viewModel.updateEmail(newEmail, emailPassword)
                     }
-                }, colors = ButtonDefaults.buttonColors(Zinc)) { Text("Update") }
+                }, colors = ButtonDefaults.buttonColors(primaryColor)) { Text("Update") }
             },
             dismissButton = {
                 TextButton(onClick = {
@@ -500,7 +514,7 @@ fun EditProfileScreen(navController: NavController, viewModel: AuthViewModel = h
 
                         else -> viewModel.updatePassword(currentPassword, newPassword)
                     }
-                }, colors = ButtonDefaults.buttonColors(Zinc)) { Text("Update") }
+                }, colors = ButtonDefaults.buttonColors(primaryColor)) { Text("Update") }
             },
             dismissButton = {
                 TextButton(onClick = {

@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Expence Tracker</string>
+    <!-- Web Client ID for Google Sign-In -->
+    <string name="default_web_client_id">571095068490-s6bkqu1ri2ft9q64rcs521ovk5h8qv17.apps.googleusercontent.com</string>
 </resources>

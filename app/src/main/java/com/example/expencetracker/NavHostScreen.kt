@@ -28,6 +28,7 @@ import com.example.expencetracker.Screen.AddExpence
 import com.example.expencetracker.Screen.AllTransactionsScreen
 import com.example.expencetracker.Screen.BudgetManagementScreen
 import com.example.expencetracker.Screen.EditProfileScreen
+import com.example.expencetracker.Screen.ForgotPasswordScreen
 import com.example.expencetracker.Screen.HomeScreen
 import com.example.expencetracker.Screen.LoginScreen
 import com.example.expencetracker.Screen.ProfileScreen
@@ -83,6 +84,11 @@ fun NavHostScreen(){
             composable(route = "/home") {
                 bottomBarVisibility = true
                 HomeScreen(navController)
+            }
+
+            composable(route = "/forgot-password") {
+                bottomBarVisibility = false
+                ForgotPasswordScreen(navController)
             }
 
             composable(route = "/add") {

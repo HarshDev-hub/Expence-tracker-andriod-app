@@ -21,6 +21,13 @@ class NotificationReceiver : BroadcastReceiver() {
                     notificationHelper.showBudgetAlert(percentage, spent, budget)
                 }
             }
+
+            "com.example.expencetracker.MONTHLY_REPORT" -> {
+                val totalIncome = intent.getDoubleExtra("totalIncome", 0.0)
+                val totalExpense = intent.getDoubleExtra("totalExpense", 0.0)
+                val balance = intent.getDoubleExtra("balance", 0.0)
+                notificationHelper.showMonthlyReport(totalExpense, totalIncome, balance)
+            }
         }
     }
 }

@@ -46,24 +46,21 @@ import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
 import com.github.mikephil.charting.formatter.ValueFormatter
 
-// Premium Color Palette
-private val PrimaryBlue = Color(0xFF5B8DEE)
-private val DarkBlue = Color(0xFF4A7BD9)
-private val LightBlue = Color(0xFFE8F1FF)
-private val AccentGreen = Color(0xFF00C9A7)
-private val AccentOrange = Color(0xFFFF9671)
-private val AccentRed = Color(0xFFFF6B6B)
-private val AccentPurple = Color(0xFF9C27B0)
-private val BackgroundLight = Color(0xFFF8F9FD)
-private val CardBackground = Color(0xFFFFFFFF)
-private val TextDark = Color(0xFF1A2138)
-private val TextGray = Color(0xFF8F92A1)
-
 @Composable
 fun StashScreen(navController: NavController) {
     val viewModel: StashVM = hiltViewModel()
     var selectedTab by remember { mutableStateOf(0) } // 0=Overview, 1=Income, 2=Expense
     var selectedPeriod by remember { mutableStateOf(1) } // 0=Day, 1=Month, 2=Year
+
+    // Get theme colors
+    val backgroundColor = MaterialTheme.colorScheme.background
+    val cardColor = MaterialTheme.colorScheme.surface
+    val textColor = MaterialTheme.colorScheme.onSurface
+    val textSecondary = MaterialTheme.colorScheme.onSurfaceVariant
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val primaryContainer = MaterialTheme.colorScheme.primaryContainer
+    val incomeColor = MaterialTheme.colorScheme.tertiary
+    val expenseColor = MaterialTheme.colorScheme.error
 
     val tabs = listOf("Overview", "Income", "Expense")
     val periods = listOf("Day", "Month", "Year")
@@ -78,21 +75,21 @@ fun StashScreen(navController: NavController) {
     val totalExpense = topExpense.value.sumOf { it.amount }
     val balance = totalIncome - totalExpense
 
-    Surface(modifier = Modifier.fillMaxSize(), color = BackgroundLight) {
+    Surface(modifier = Modifier.fillMaxSize(), color = backgroundColor) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // Premium Header
+            // Premium Header - Fixed at top
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(
                         Brush.verticalGradient(
-                            colors = listOf(PrimaryBlue, DarkBlue),
+                            colors = listOf(primaryColor, primaryContainer),
                             startY = 0f,
-                            endY = 600f
+                            endY = 400f
                         )
                     )
                     .padding(horizontal = 24.dp)
-                    .padding(top = 50.dp, bottom = 30.dp)
+                    .padding(top = 50.dp, bottom = 20.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -104,12 +101,12 @@ fun StashScreen(navController: NavController) {
                         modifier = Modifier
                             .size(44.dp)
                             .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.2f))
+                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
                     ) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Back",
-                            tint = Color.White
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
 
@@ -117,7 +114,7 @@ fun StashScreen(navController: NavController) {
                         text = "Statistics",
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
                     Spacer(modifier = Modifier.size(44.dp))
@@ -126,14 +123,13 @@ fun StashScreen(navController: NavController) {
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 90.dp)
+                contentPadding = PaddingValues(bottom = 90.dp, top = 16.dp)
             ) {
-                // Summary Cards (Overlapping)
+                // Summary Cards - Now properly below header
                 item {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .offset(y = (-50).dp)
                             .padding(horizontal = 24.dp)
                     ) {
                         // Balance Card
@@ -142,7 +138,7 @@ fun StashScreen(navController: NavController) {
                                 .fillMaxWidth()
                                 .shadow(8.dp, RoundedCornerShape(20.dp)),
                             shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = CardBackground)
+                            colors = CardDefaults.cardColors(containerColor = cardColor)
                         ) {
                             Column(
                                 modifier = Modifier
@@ -152,14 +148,14 @@ fun StashScreen(navController: NavController) {
                                 Text(
                                     text = "Total Balance",
                                     fontSize = 14.sp,
-                                    color = TextGray
+                                    color = textSecondary
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
                                     text = "₹ ${String.format("%,.0f", balance)}",
                                     fontSize = 32.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = TextDark
+                                    color = textColor
                                 )
 
                                 Spacer(modifier = Modifier.height(20.dp))
@@ -173,7 +169,7 @@ fun StashScreen(navController: NavController) {
                                         modifier = Modifier
                                             .weight(1f)
                                             .clip(RoundedCornerShape(16.dp))
-                                            .background(AccentGreen.copy(alpha = 0.1f))
+                                            .background(incomeColor.copy(alpha = 0.1f))
                                             .padding(16.dp)
                                     ) {
                                         Row(
@@ -184,13 +180,13 @@ fun StashScreen(navController: NavController) {
                                                 modifier = Modifier
                                                     .size(36.dp)
                                                     .clip(CircleShape)
-                                                    .background(AccentGreen),
+                                                    .background(incomeColor),
                                                 contentAlignment = Alignment.Center
                                             ) {
                                                 Icon(
                                                     imageVector = Icons.Default.ArrowDownward,
                                                     contentDescription = null,
-                                                    tint = Color.White,
+                                                    tint = MaterialTheme.colorScheme.onTertiary,
                                                     modifier = Modifier.size(18.dp)
                                                 )
                                             }
@@ -198,7 +194,7 @@ fun StashScreen(navController: NavController) {
                                                 Text(
                                                     text = "Income",
                                                     fontSize = 11.sp,
-                                                    color = TextGray
+                                                    color = textSecondary
                                                 )
                                                 Text(
                                                     text = "₹${
@@ -209,7 +205,7 @@ fun StashScreen(navController: NavController) {
                                                     }",
                                                     fontSize = 15.sp,
                                                     fontWeight = FontWeight.Bold,
-                                                    color = AccentGreen
+                                                    color = incomeColor
                                                 )
                                             }
                                         }
@@ -220,7 +216,7 @@ fun StashScreen(navController: NavController) {
                                         modifier = Modifier
                                             .weight(1f)
                                             .clip(RoundedCornerShape(16.dp))
-                                            .background(AccentOrange.copy(alpha = 0.1f))
+                                            .background(expenseColor.copy(alpha = 0.1f))
                                             .padding(16.dp)
                                     ) {
                                         Row(
@@ -231,13 +227,13 @@ fun StashScreen(navController: NavController) {
                                                 modifier = Modifier
                                                     .size(36.dp)
                                                     .clip(CircleShape)
-                                                    .background(AccentOrange),
+                                                    .background(expenseColor),
                                                 contentAlignment = Alignment.Center
                                             ) {
                                                 Icon(
                                                     imageVector = Icons.Default.ArrowUpward,
                                                     contentDescription = null,
-                                                    tint = Color.White,
+                                                    tint = MaterialTheme.colorScheme.onError,
                                                     modifier = Modifier.size(18.dp)
                                                 )
                                             }
@@ -245,7 +241,7 @@ fun StashScreen(navController: NavController) {
                                                 Text(
                                                     text = "Expense",
                                                     fontSize = 11.sp,
-                                                    color = TextGray
+                                                    color = textSecondary
                                                 )
                                                 Text(
                                                     text = "₹${
@@ -256,7 +252,7 @@ fun StashScreen(navController: NavController) {
                                                     }",
                                                     fontSize = 15.sp,
                                                     fontWeight = FontWeight.Bold,
-                                                    color = AccentOrange
+                                                    color = expenseColor
                                                 )
                                             }
                                         }
@@ -271,7 +267,7 @@ fun StashScreen(navController: NavController) {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = CardBackground),
+                            colors = CardDefaults.cardColors(containerColor = cardColor),
                             elevation = CardDefaults.cardElevation(2.dp)
                         ) {
                             Row(
@@ -287,9 +283,9 @@ fun StashScreen(navController: NavController) {
                                             .clip(RoundedCornerShape(12.dp))
                                             .background(
                                                 when {
-                                                    selectedTab == index && index == 0 -> PrimaryBlue
-                                                    selectedTab == index && index == 1 -> AccentGreen
-                                                    selectedTab == index && index == 2 -> AccentOrange
+                                                    selectedTab == index && index == 0 -> primaryColor
+                                                    selectedTab == index && index == 1 -> incomeColor
+                                                    selectedTab == index && index == 2 -> expenseColor
                                                     else -> Color.Transparent
                                                 }
                                             )
@@ -301,7 +297,7 @@ fun StashScreen(navController: NavController) {
                                             text = title,
                                             fontSize = 14.sp,
                                             fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal,
-                                            color = if (selectedTab == index) Color.White else TextGray
+                                            color = if (selectedTab == index) MaterialTheme.colorScheme.onPrimary else textSecondary
                                         )
                                     }
                                 }
@@ -350,13 +346,13 @@ fun StashScreen(navController: NavController) {
                                 },
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = TextDark
+                                color = textColor
                             )
 
                             Icon(
                                 imageVector = if (selectedTab == 1) Icons.Default.TrendingUp else Icons.Default.TrendingDown,
                                 contentDescription = null,
-                                tint = if (selectedTab == 1) AccentGreen else AccentOrange,
+                                tint = if (selectedTab == 1) incomeColor else expenseColor,
                                 modifier = Modifier.size(24.dp)
                             )
                         }
@@ -380,7 +376,7 @@ fun StashScreen(navController: NavController) {
                                 .padding(horizontal = 24.dp)
                                 .height(160.dp),
                             shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = CardBackground),
+                            colors = CardDefaults.cardColors(containerColor = cardColor),
                             elevation = CardDefaults.cardElevation(2.dp)
                         ) {
                             Column(
@@ -401,7 +397,7 @@ fun StashScreen(navController: NavController) {
                                     text = "No data available",
                                     fontSize = 20.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = TextDark
+                                    color = textColor
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
@@ -411,7 +407,7 @@ fun StashScreen(navController: NavController) {
                                         else -> "Start tracking your finances"
                                     },
                                     fontSize = 14.sp,
-                                    color = TextGray,
+                                    color = textSecondary,
                                     textAlign = TextAlign.Center
                                 )
                             }
@@ -424,7 +420,7 @@ fun StashScreen(navController: NavController) {
                                 .fillMaxWidth()
                                 .padding(horizontal = 24.dp, vertical = 6.dp),
                             shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = CardBackground),
+                            colors = CardDefaults.cardColors(containerColor = cardColor),
                             elevation = CardDefaults.cardElevation(1.dp)
                         ) {
                             Row(
@@ -441,9 +437,9 @@ fun StashScreen(navController: NavController) {
                                         .clip(RoundedCornerShape(12.dp))
                                         .background(
                                             if (item.type == "Income")
-                                                AccentGreen.copy(alpha = 0.15f)
+                                                incomeColor.copy(alpha = 0.15f)
                                             else
-                                                AccentOrange.copy(alpha = 0.15f)
+                                                expenseColor.copy(alpha = 0.15f)
                                         ),
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -461,13 +457,13 @@ fun StashScreen(navController: NavController) {
                                         text = item.title,
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.SemiBold,
-                                        color = TextDark
+                                        color = textColor
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
                                         text = "${item.category} • ${item.date}",
                                         fontSize = 12.sp,
-                                        color = TextGray
+                                        color = textSecondary
                                     )
                                 }
 
@@ -475,7 +471,7 @@ fun StashScreen(navController: NavController) {
                                     text = if (item.type == "Income") "+₹${item.amount.toInt()}" else "-₹${item.amount.toInt()}",
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (item.type == "Income") AccentGreen else AccentOrange
+                                    color = if (item.type == "Income") incomeColor else expenseColor
                                 )
                             }
                         }
@@ -500,7 +496,7 @@ fun ModernLineChart(entries: List<Entry>, type: String) {
                 .fillMaxWidth()
                 .height(280.dp),
             shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = CardBackground),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(4.dp)
         ) {
             Box(
@@ -514,13 +510,13 @@ fun ModernLineChart(entries: List<Entry>, type: String) {
                         text = "No Data Yet",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TextDark
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "Start adding transactions\nto see beautiful insights",
                         fontSize = 14.sp,
-                        color = TextGray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
                     )
                 }
@@ -532,7 +528,7 @@ fun ModernLineChart(entries: List<Entry>, type: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = CardBackground),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
@@ -551,13 +547,13 @@ fun ModernLineChart(entries: List<Entry>, type: String) {
                         },
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TextDark
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "Last ${entries.size} transactions",
                         fontSize = 12.sp,
-                        color = TextGray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
@@ -565,9 +561,9 @@ fun ModernLineChart(entries: List<Entry>, type: String) {
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = when (type) {
-                            "Income" -> AccentGreen.copy(alpha = 0.15f)
-                            "Expense" -> AccentOrange.copy(alpha = 0.15f)
-                            else -> PrimaryBlue.copy(alpha = 0.15f)
+                            "Income" -> MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f)
+                            "Expense" -> MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
+                            else -> MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                         }
                     )
                 ) {
@@ -576,9 +572,9 @@ fun ModernLineChart(entries: List<Entry>, type: String) {
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = when (type) {
-                            "Income" -> AccentGreen
-                            "Expense" -> AccentOrange
-                            else -> PrimaryBlue
+                            "Income" -> MaterialTheme.colorScheme.tertiary
+                            "Expense" -> MaterialTheme.colorScheme.error
+                            else -> MaterialTheme.colorScheme.primary
                         },
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                     )

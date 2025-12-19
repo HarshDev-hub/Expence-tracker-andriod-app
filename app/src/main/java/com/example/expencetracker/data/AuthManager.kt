@@ -1,7 +1,9 @@
 package com.example.expencetracker.data
 
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.UserProfileChangeRequest
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
@@ -47,6 +49,21 @@ class AuthManager @Inject constructor(
                 Result.success(user)
             } else {
                 Result.failure(Exception("Failed to sign in"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun signInWithGoogle(account: GoogleSignInAccount): Result<FirebaseUser> {
+        return try {
+            val credential = GoogleAuthProvider.getCredential(account.idToken, null)
+            val result = firebaseAuth.signInWithCredential(credential).await()
+            val user = result.user
+            if (user != null) {
+                Result.success(user)
+            } else {
+                Result.failure(Exception("Failed to sign in with Google"))
             }
         } catch (e: Exception) {
             Result.failure(e)

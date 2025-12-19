@@ -8,6 +8,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.ActivityCompat
@@ -16,7 +17,6 @@ import androidx.core.app.NotificationManagerCompat
 import com.example.expencetracker.MainActivity
 import com.example.expencetracker.R
 import java.util.Calendar
-import kotlin.jvm.java
 
 class NotificationHelper(private val context: Context) {
 
@@ -27,7 +27,15 @@ class NotificationHelper(private val context: Context) {
         const val NOTIFICATION_ID_BUDGET = 1002
         const val NOTIFICATION_ID_MONTHLY = 1003
         const val NOTIFICATION_ID_LARGE = 1004
+        
+        // SharedPreferences keys
+        private const val PREFS_NAME = "notification_prefs"
+        private const val KEY_LAST_ALERT_PERCENTAGE = "last_alert_percentage"
+        private const val KEY_LAST_ALERT_DATE = "last_alert_date"
+        private const val KEY_DAILY_REMINDER_SCHEDULED = "daily_reminder_scheduled"
     }
+
+    private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     init {
         createNotificationChannel()
@@ -74,6 +82,11 @@ class NotificationHelper(private val context: Context) {
 
     @SuppressLint("DefaultLocale")
     fun showBudgetAlert(percentage: Int, spent: Double, budget: Double) {
+        // Check if we should show this alert (avoid duplicates)
+        if (!shouldShowBudgetAlert(percentage)) {
+            return
+        }
+
         val title = when {
             percentage >= 100 -> "⚠️ Budget Exceeded!"
             percentage >= 90 -> "🚨 Budget Alert: 90% Used"
@@ -108,6 +121,8 @@ class NotificationHelper(private val context: Context) {
 
         if (checkNotificationPermission()) {
             NotificationManagerCompat.from(context).notify(NOTIFICATION_ID_BUDGET, notification)
+            // Save alert state
+            saveLastAlertState(percentage)
         }
     }
 
@@ -163,6 +178,11 @@ class NotificationHelper(private val context: Context) {
     }
 
     fun scheduleDailyReminder(hour: Int = 20, minute: Int = 0) {
+        // Check if already scheduled to avoid duplicates
+        if (isDailyReminderScheduled()) {
+            return
+        }
+
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, NotificationReceiver::class.java).apply {
             action = "com.example.expencetracker.DAILY_REMINDER"
@@ -190,6 +210,43 @@ class NotificationHelper(private val context: Context) {
                 AlarmManager.INTERVAL_DAY,
                 pendingIntent
             )
+            // Mark as scheduled
+            prefs.edit().putBoolean(KEY_DAILY_REMINDER_SCHEDULED, true).apply()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun scheduleMonthlyReport() {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(context, NotificationReceiver::class.java).apply {
+            action = "com.example.expencetracker.MONTHLY_REPORT"
+        }
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            200,
+            intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        val calendar = Calendar.getInstance().apply {
+            set(Calendar.DAY_OF_MONTH, 1)
+            set(Calendar.HOUR_OF_DAY, 9)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            if (timeInMillis < System.currentTimeMillis()) {
+                add(Calendar.MONTH, 1)
+            }
+        }
+
+        try {
+            // Schedule to repeat every month
+            alarmManager.setRepeating(
+                AlarmManager.RTC_WAKEUP,
+                calendar.timeInMillis,
+                AlarmManager.INTERVAL_DAY * 30, // Approximate month
+                pendingIntent
+            )
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -206,6 +263,7 @@ class NotificationHelper(private val context: Context) {
         )
         pendingIntent?.let {
             alarmManager.cancel(it)
+            prefs.edit().putBoolean(KEY_DAILY_REMINDER_SCHEDULED, false).apply()
         }
     }
 
@@ -222,5 +280,52 @@ class NotificationHelper(private val context: Context) {
 
     fun requestNotificationPermission(): Boolean {
         return checkNotificationPermission()
+    }
+
+    // Helper methods for alert tracking
+    
+    private fun shouldShowBudgetAlert(percentage: Int): Boolean {
+        val lastPercentage = prefs.getInt(KEY_LAST_ALERT_PERCENTAGE, 0)
+        val today = getCurrentDate()
+        val lastAlertDate = prefs.getString(KEY_LAST_ALERT_DATE, "")
+        
+        // Reset alerts on new day
+        if (lastAlertDate != today) {
+            resetAlertState()
+            return true
+        }
+        
+        // Only show if percentage is higher threshold
+        return when {
+            percentage >= 100 && lastPercentage < 100 -> true
+            percentage >= 90 && lastPercentage < 90 -> true
+            percentage >= 80 && lastPercentage < 80 -> true
+            else -> false
+        }
+    }
+    
+    private fun saveLastAlertState(percentage: Int) {
+        prefs.edit().apply {
+            putInt(KEY_LAST_ALERT_PERCENTAGE, percentage)
+            putString(KEY_LAST_ALERT_DATE, getCurrentDate())
+            apply()
+        }
+    }
+    
+    fun resetAlertState() {
+        prefs.edit().apply {
+            putInt(KEY_LAST_ALERT_PERCENTAGE, 0)
+            putString(KEY_LAST_ALERT_DATE, "")
+            apply()
+        }
+    }
+    
+    private fun getCurrentDate(): String {
+        val calendar = Calendar.getInstance()
+        return "${calendar.get(Calendar.YEAR)}-${calendar.get(Calendar.MONTH)}-${calendar.get(Calendar.DAY_OF_MONTH)}"
+    }
+    
+    private fun isDailyReminderScheduled(): Boolean {
+        return prefs.getBoolean(KEY_DAILY_REMINDER_SCHEDULED, false)
     }
 }

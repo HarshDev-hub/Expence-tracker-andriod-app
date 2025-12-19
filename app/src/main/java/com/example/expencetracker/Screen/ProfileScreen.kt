@@ -30,19 +30,6 @@ import com.example.expencetracker.viewmodel.AuthViewModel
 import com.example.expencetracker.viewmodel.HomeVM
 import kotlinx.coroutines.launch
 
-// Premium Color Palette (matching HomeScreen)
-private val PrimaryBlue = Color(0xFF5B8DEE)
-private val DarkBlue = Color(0xFF4A7BD9)
-private val LightBlue = Color(0xFFE8F1FF)
-private val AccentGreen = Color(0xFF00C9A7)
-private val AccentOrange = Color(0xFFFF9671)
-private val AccentRed = Color(0xFFFF6B6B)
-private val BackgroundLight = Color(0xFFF8F9FD)
-private val CardBackground = Color(0xFFFFFFFF)
-private val TextDark = Color(0xFF1A2138)
-private val TextGray = Color(0xFF8F92A1)
-private val AccentPurple = Color(0xFF7A288A)
-
 @Composable
 fun ProfileScreen(navController: NavController, viewModel: AuthViewModel = hiltViewModel()) {
     val currentUser by viewModel.currentUser.collectAsState()
@@ -58,6 +45,7 @@ fun ProfileScreen(navController: NavController, viewModel: AuthViewModel = hiltV
     val textColor = MaterialTheme.colorScheme.onSurface
     val textSecondary = MaterialTheme.colorScheme.onSurfaceVariant
     val primaryColor = MaterialTheme.colorScheme.primary
+    val errorColor = MaterialTheme.colorScheme.error
 
     Surface(modifier = Modifier.fillMaxSize(), color = backgroundColor) {
         Column(
@@ -65,19 +53,19 @@ fun ProfileScreen(navController: NavController, viewModel: AuthViewModel = hiltV
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
-            // Premium Header with Gradient
+            // Compact Premium Header
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(
                         Brush.verticalGradient(
-                            colors = listOf(primaryColor, primaryColor.copy(alpha = 0.5f)),
+                            colors = listOf(primaryColor, primaryColor.copy(alpha = 0.7f)),
                             startY = 0f,
-                            endY = 600f
+                            endY = 400f
                         )
                     )
                     .padding(horizontal = 24.dp)
-                    .padding(top = 50.dp, bottom = 80.dp)
+                    .padding(top = 50.dp, bottom = 40.dp)
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -93,63 +81,63 @@ fun ProfileScreen(navController: NavController, viewModel: AuthViewModel = hiltV
                             modifier = Modifier
                                 .size(44.dp)
                                 .clip(CircleShape)
-                                .background(Color.White.copy(alpha = 0.2f))
+                                .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f))
                         ) {
                             Icon(
                                 imageVector = Icons.Default.ArrowBack,
                                 contentDescription = "Back",
-                                tint = textColor
+                                tint = MaterialTheme.colorScheme.onPrimary
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                    // Profile Avatar
+                    // Profile Avatar - Smaller
                     Box(
                         modifier = Modifier
-                            .size(120.dp)
-                            .shadow(12.dp, CircleShape)
+                            .size(100.dp)
+                            .shadow(8.dp, CircleShape)
                             .clip(CircleShape)
-                            .background(Color.White)
+                            .background(MaterialTheme.colorScheme.onPrimary)
                             .clickable { navController.navigate("/edit-profile") },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = (currentUser?.displayName?.firstOrNull()?.uppercase() ?: "U"),
-                            fontSize = 48.sp,
+                            fontSize = 40.sp,
                             fontWeight = FontWeight.Bold,
                             color = primaryColor
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                    // User Name
+                    // User Name - Smaller
                     Text(
                         text = currentUser?.displayName ?: "User",
-                        fontSize = 28.sp,
+                        fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
-                        color = textColor
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
 
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
 
-                    // User Email
+                    // User Email - Smaller
                     Text(
                         text = currentUser?.email ?: "No email",
-                        fontSize = 15.sp,
-                        color = textSecondary
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
                     )
                 }
             }
 
-            // Content Section (Overlapping Cards)
+            // Content Section - Properly below header
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .offset(y = (-50).dp)
                     .padding(horizontal = 24.dp)
+                    .padding(top = 16.dp)
             ) {
                 // Edit Profile Card
                 Card(
@@ -547,7 +535,7 @@ fun ProfileScreen(navController: NavController, viewModel: AuthViewModel = hiltV
                         .height(56.dp)
                         .shadow(8.dp, RoundedCornerShape(16.dp)),
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = AccentRed)
+                    colors = ButtonDefaults.buttonColors(containerColor = errorColor)
                 ) {
                     Icon(
                         imageVector = Icons.Default.ExitToApp,
@@ -597,7 +585,7 @@ fun ProfileScreen(navController: NavController, viewModel: AuthViewModel = hiltV
                             popUpTo(0) { inclusive = true }
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = AccentRed),
+                    colors = ButtonDefaults.buttonColors(containerColor = errorColor),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text("Logout", modifier = Modifier.padding(horizontal = 16.dp))

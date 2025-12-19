@@ -35,7 +35,6 @@ class HomeVM @Inject constructor(
     val monthlyBudget: StateFlow<Double> = _monthlyBudget
 
     private val notificationHelper = NotificationHelper(application.applicationContext)
-    private var lastBudgetAlertPercentage = 0
 
     init {
         viewModelScope.launch {
@@ -55,29 +54,27 @@ class HomeVM @Inject constructor(
             }
         }
 
-        // Schedule daily reminder
-        notificationHelper.scheduleDailyReminder(20, 0) // 8 PM
+        // Schedule notifications (only once)
+        notificationHelper.scheduleDailyReminder(20, 0) // 8 PM daily reminder
+        notificationHelper.scheduleMonthlyReport() // Monthly report on 1st
     }
 
     private fun checkBudgetAlerts(expenses: List<ExpenseEntity>, budget: Double) {
         val totalExpense = expenses.filter { it.type == "Expense" }.sumOf { it.amount }
         val percentage = ((totalExpense / budget) * 100).toInt()
 
-        // Show alert for 80%, 90%, 100% thresholds
+        // NotificationHelper now handles duplicate checking internally
         when {
-            percentage >= 100 && lastBudgetAlertPercentage < 100 -> {
+            percentage >= 100 -> {
                 notificationHelper.showBudgetAlert(percentage, totalExpense, budget)
-                lastBudgetAlertPercentage = 100
             }
 
-            percentage >= 90 && lastBudgetAlertPercentage < 90 -> {
+            percentage >= 90 -> {
                 notificationHelper.showBudgetAlert(percentage, totalExpense, budget)
-                lastBudgetAlertPercentage = 90
             }
 
-            percentage >= 80 && lastBudgetAlertPercentage < 80 -> {
+            percentage >= 80 -> {
                 notificationHelper.showBudgetAlert(percentage, totalExpense, budget)
-                lastBudgetAlertPercentage = 80
             }
         }
     }
@@ -135,7 +132,6 @@ class HomeVM @Inject constructor(
                 repository.insertBudget(budgetEntity.copy(id = null))
             }
             _monthlyBudget.value = newBudget
-            lastBudgetAlertPercentage = 0 // Reset alerts for new budget
         }
     }
 
