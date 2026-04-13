@@ -35,7 +35,7 @@
 
 <p align="center">
   <img src="screenshot/screen1.png" width="250"/>
-  <img src="screenshot/screen2.png" width="250"/>
+  <img src="screenshot/screen 2.png" width="250"/>
   <img src="screenshot/screen3.png" width="250"/>
 </p>
 
