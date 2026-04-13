@@ -42,7 +42,7 @@
 <p align="center">
   <img src="screenshot/screen4.png" width="250"/>
   <img src="screenshot/screen5.png" width="250"/>
-  <img src="screenshots/screen6.png" width="250"/>
+  <img src="screenshot/screen6.png" width="250"/>
 </p>
 
 <p align="center">
