@@ -65,7 +65,14 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel = hiltVie
                 viewModel.signInWithGoogle(it)
             }
         } catch (e: ApiException) {
-            Toast.makeText(context, "Google Sign-In failed: ${e.message}", Toast.LENGTH_LONG).show()
+            // Only show error if it's not user cancellation
+            if (e.statusCode != 12501) {
+                Toast.makeText(
+                    context,
+                    "Google Sign-In failed: ${e.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
         }
     }
 
