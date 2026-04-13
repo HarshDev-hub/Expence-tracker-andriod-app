@@ -34,21 +34,21 @@
 > 📱 Clean and intuitive UI designed for smooth expense tracking
 
 <p align="center">
-  <img src="screenshots/screen1.png" width="250"/>
-  <img src="screenshots/screen2.png" width="250"/>
-  <img src="screenshots/screen3.png" width="250"/>
+  <img src="screenshot/screen1.png" width="250"/>
+  <img src="screenshot/screen2.png" width="250"/>
+  <img src="screenshot/screen3.png" width="250"/>
 </p>
 
 <p align="center">
-  <img src="screenshots/screen4.png" width="250"/>
-  <img src="screenshots/screen5.png" width="250"/>
+  <img src="screenshot/screen4.png" width="250"/>
+  <img src="screenshot/screen5.png" width="250"/>
   <img src="screenshots/screen6.png" width="250"/>
 </p>
 
 <p align="center">
-  <img src="screenshots/screen7.png" width="250"/>
-  <img src="screenshots/screen8.png" width="250"/>
-  <img src="screenshots/screen9.png" width="250"/>
+  <img src="screenshot/screen7.png" width="250"/>
+  <img src="screenshot/screen8.png" width="250"/>
+  <img src="screenshot/screen9.png" width="250"/>
 </p>
 
 ---
